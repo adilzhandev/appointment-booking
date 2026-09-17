@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: appointment-db
+    environment:
+      POSTGRES_DB: appointment_db
+      POSTGRES_USER: appointment
+      POSTGRES_PASSWORD: appointment
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appointment -d appointment_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: appointment-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/appointment_db
+      DB_USERNAME: appointment
+      DB_PASSWORD: appointment
+      JWT_SECRET: docker-compose-dev-secret-change-me-32-bytes
+      JWT_EXPIRATION: 3600
+      SEED_ENABLED: "true"
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:
